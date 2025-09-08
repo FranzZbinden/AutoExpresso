@@ -21,21 +21,20 @@ import aprox  # type: ignore
 REFRESH_SECONDS_DEFAULT = 120
 
 
-def fetch_route_lines() -> tuple[str, str]:
+def fetch_route_lines(departure_time: int) -> tuple[str, str]:
     """Fetch two routes using aprox helpers and return formatted LED lines.
 
     Returns two strings like "ROUTE 1  27.0 km  |  21 mins".
     """
     api_key = aprox.load_api_key()
-    departure_time = int(time.time())
 
     routes = aprox.load_routes()
 
     lines: list[str] = []
     for name, lat1, lng1, lat2, lng2 in routes:
         data = aprox.get_route(lat1, lng1, lat2, lng2, api_key, departure_time)
-        _distance, duration, _arrival = aprox.parse_route(data)
-        line = f"{name}  Cag --> SJ  |  {duration}"
+        _distance, duration, _arrival = aprox.parse_route(data, departure_time)
+        line = f"{name}  SJ --> Cag  |  {duration}"
         lines.append(line.upper())
 
     return lines[0], lines[1]
@@ -44,10 +43,11 @@ def fetch_route_lines() -> tuple[str, str]:
 class LedDisplayApp:
     """Tkinter app emulating a highway LED display with two lines."""
 
-    def __init__(self, root: tk.Tk) -> None:
+    def __init__(self, root: tk.Tk, departure_time: int) -> None:
         self.root = root
         self.root.title("Highway LED Display")
         self.root.configure(bg="#000000")
+        self.departure_time = departure_time
 
         # Allow environment override for refresh seconds
         refresh_env = os.getenv("DISPLAY_REFRESH_SECONDS")
@@ -100,28 +100,43 @@ class LedDisplayApp:
     def update_lines(self) -> None:
         """Fetch latest values and update the two LED lines."""
         try:
-            line1, line2 = fetch_route_lines()
+            line1, line2 = fetch_route_lines(self.departure_time)
             self.line1.config(text=line1)
             self.line2.config(text=line2)
-            self.status.config(text=time.strftime("%Y-%m-%d %H:%M:%S"))
+            depart_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.departure_time))
+            refreshed_str = time.strftime("%Y-%m-%d %H:%M:%S")
+            self.status.config(text=f"DEPARTURE: {depart_str}  |  REFRESHED: {refreshed_str}")
         except Exception as exc:  # Broad to ensure display keeps running
             self.line1.config(text="ERROR FETCHING ROUTES")
             self.line2.config(text=str(exc)[:80].upper())
-            self.status.config(text=time.strftime("%Y-%m-%d %H:%M:%S"))
+            depart_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.departure_time))
+            self.status.config(text=f"DEPARTURE: {depart_str}  |  REFRESHED: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # Schedule next refresh
         self.root.after(self.refresh_seconds * 1000, self.update_lines)
 
 
+def prompt_unix_timestamp() -> int:
+    """Prompt the user for a Unix timestamp (seconds). Defaults to now if blank/invalid."""
+    print("Enter Unix departure timestamp (seconds). Leave blank for 'now'.")
+    user_input = input("> ").strip()
+    if user_input == "":
+        return int(time.time())
+    try:
+        return int(user_input)
+    except ValueError:
+        print("Invalid timestamp. Using current time.")
+        return int(time.time())
+
+
 def main() -> None:
+    departure_time = prompt_unix_timestamp()
     root = tk.Tk()
     # Sensible default window size; adjust or make fullscreen as needed
     root.geometry("1000x300")
-    app = LedDisplayApp(root)
+    app = LedDisplayApp(root, departure_time)
     root.mainloop()
 
 
 if __name__ == "__main__":
     main()
-
-

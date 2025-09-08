@@ -1,10 +1,35 @@
-	partida en caguas: 
-		caro:	18.276052, -66.036016
+	Caguas: 
+		caro:	18.276052,-66.036016
 
-		barato:	18.276092, -66.035731
+		barato derecha:	18.276092,-66.035731
+
+		barato izquierda: 18.276206,-66.036102
+
 
 
 	meta en SJ 
-		cara: 18.337392, -66.065053
+		caro: 18.406480,-66.069848
 
-		barata: 18.337639, -66.064872
+		barato derecha: 18.406490,-66.069758
+
+		barato izquierda: 18.406490,-66.069982
+
+
+
+	Meta Caguas:
+		caro: 18.299641,-66.043075
+		
+		barato der:	18.299506,-66.042932
+
+		barato izq: 18.299785,-66.043196
+
+
+time: 1757449775
+
+
+
+
+
+		
+
+
